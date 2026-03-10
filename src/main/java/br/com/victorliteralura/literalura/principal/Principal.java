@@ -1,8 +1,12 @@
 package br.com.victorliteralura.literalura.principal;
 
 import br.com.victorliteralura.literalura.api.ApiService;
+import br.com.victorliteralura.literalura.entity.Autor;
 import br.com.victorliteralura.literalura.entity.Livro;
+import br.com.victorliteralura.literalura.model.DadosAutor;
+import br.com.victorliteralura.literalura.model.DadosLivro;
 import br.com.victorliteralura.literalura.model.ResultadoBusca;
+import br.com.victorliteralura.literalura.repository.AutorRepository;
 import br.com.victorliteralura.literalura.repository.LivroRepository;
 
 import java.util.List;
@@ -12,10 +16,12 @@ public class Principal {
 
     private final Scanner scanner = new Scanner(System.in);
     private final ApiService apiService = new ApiService();
+    private final AutorRepository autorRepository;
     private final LivroRepository livroRepository;
 
-    public Principal(LivroRepository livroRepository) {
+    public Principal(LivroRepository livroRepository, AutorRepository autorRepository) {
         this.livroRepository = livroRepository;
+        this.autorRepository = autorRepository;
     }
     public void exibeMenu() {
         int opcao = -1;
@@ -41,7 +47,9 @@ public class Principal {
                 case 1 -> buscarLivroPeloTitulo();
                 case 2 -> listarLivros();
                 case 3 -> listarPorIdioma();
-                case 0 -> System.out.println("Encerrando...");
+                case 4 -> listarAutores();
+                case 5 -> listarAutoresVivosNoAno();
+                case 0 -> System.out.println("\uD83D\uDEB7 Encerrando...");
                 default -> System.out.println("⚠️ Opção inválida!");
             }
         }
@@ -58,8 +66,14 @@ public class Principal {
             System.out.println("❌ Nenhum livro encontrado!");
             return;
         }
+        DadosLivro dadosLivro = resultado.livros().get(0);
+        DadosAutor dadosAutor = dadosLivro.autores().isEmpty() ? null : dadosLivro.autores().get(0);
 
-        Livro livro = new Livro(resultado.livros().get(0));
+        Autor autor = dadosAutor != null
+                ? autorRepository.findByNome(dadosAutor.nome())
+                .orElseGet(() -> autorRepository.save(new Autor(dadosAutor)))
+                : autorRepository.save(new Autor());
+        Livro livro = new Livro(dadosLivro, autor);
 
         try {
             livroRepository.save(livro);
@@ -71,6 +85,20 @@ public class Principal {
 
     private void listarLivros() {
         livroRepository.findAll().forEach(System.out::println);
+    }
+    private void listarAutores() {
+        autorRepository.findAll().forEach(System.out::println);
+    }
+
+    private void listarAutoresVivosNoAno() {
+        System.out.print("Digite o ano: ");
+        int ano = Integer.parseInt(scanner.nextLine());
+        List<Autor> autores = autorRepository.findAutoresVivosNoAno(ano);
+        if (autores.isEmpty()) {
+            System.out.println("❌ Nenhum autor encontrado vivo em " + ano);
+        } else {
+            autores.forEach(System.out::println);
+        }
     }
 
     private void listarPorIdioma() {

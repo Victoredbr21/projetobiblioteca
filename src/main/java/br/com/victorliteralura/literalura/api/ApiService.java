@@ -1,4 +1,4 @@
-package br.com.victorliteralura.literalura.API;
+package br.com.victorliteralura.literalura.api;
 
 import br.com.victorliteralura.literalura.model.ResultadoBusca;
 import com.fasterxml.jackson.databind.ObjectMapper;
